@@ -17,12 +17,14 @@ public class Pathfinder {
     private static int POSSIBLE_ORIENTATIONS = 9;
 
     //STEPS TO CALCULATE
-    private static int STEPS = 40543234;
+    private static int STEPS = Integer.MAX_VALUE;
 
     //MAP INFO
     private ArrayList<ArrayList<Integer>> map;
     private double mapHeight;
     private double mapWidth;
+    ArrayList<ArrayList<Integer>> visitedAtMap;
+    Integer nActionsExecuted;
 
     //PLAN
     ArrayList<Types.ACTIONS> plan;
@@ -33,29 +35,47 @@ public class Pathfinder {
     ArrayList<Coordinates> blockedPositions;
     ArrayList<Vector2d> resources;
 
+
+
     public Pathfinder(double width, double height, ArrayList<Vector2d> blockedPositions, ArrayList<Vector2d> resources) {
         this.mapWidth = width;
         this.mapHeight = height;
         this.blockedPositions = new ArrayList(Arrays.asList(blockedPositions.stream().map(vector -> new Coordinates(vector.x, vector.y)).toArray()));
         this.resources = resources;
+        initializeVisitedAtMap();
+        this.nActionsExecuted = 0;
     }
 
     public Pathfinder(double width, double height, ArrayList<Vector2d> blockedPositions) {
         this.mapWidth = width;
         this.mapHeight = height;
         this.blockedPositions = new ArrayList(Arrays.asList(blockedPositions.stream().map(vector -> new Coordinates(vector.x, vector.y)).toArray()));
+        initializeVisitedAtMap();
+        this.nActionsExecuted = 0;
+    }
+
+    private void initializeVisitedAtMap() {
+        this.visitedAtMap = new ArrayList<>();
+        for (int i = 0; i < this.mapWidth; i++) {
+            ArrayList<Integer> row = new ArrayList<>();
+            for (int j = 0; j < this.mapHeight; j++) {
+                row.add(-1);
+            }
+            this.visitedAtMap.add(row);
+        }
     }
 
     public ArrayList<Types.ACTIONS> getPlanForResources(ArrayList<Vector2d> resources, double orientationX, double orientationY, Vector2d initialPosition){
 
         this.resources = resources;
-        Comparator<Vector2d> comparador = (Vector2d o1, Vector2d o2) -> {
+
+        Comparator<Vector2d> comparator = (Vector2d o1, Vector2d o2) -> {
             Coordinates resource1 = new Coordinates (o1.x, o1.y);
             Coordinates resource2 = new Coordinates (o2.x, o2.y);
             return Double.compare( resource1.calculateDistance(new Coordinates(initialPosition.x, initialPosition.y)), resource2.calculateDistance(new Coordinates(initialPosition.x, initialPosition.y)));
         };
 
-        this.resources.sort(comparador);
+        this.resources.sort(comparator);
         Vector2d targetPosition = resources.get(0);
         return pathFinding_a(orientationX, orientationY, initialPosition, targetPosition);
     }
@@ -119,6 +139,10 @@ public class Pathfinder {
         }
 
         //Hemos terminado, recuperamos el plan si hemos logrado llegar
+        if(current == null) {
+            plan.add(Types.ACTIONS.ACTION_NIL);
+            return plan;
+        }
 
         System.out.println("Chosen: " + current + " --- is target: " + current.checkCoordinates(this.targetPosition));
         this.plan = current.getPath();
@@ -132,9 +156,10 @@ public class Pathfinder {
         for (int i = 1; i < Pathfinder.POSSIBLE_ORIENTATIONS; i+=2) {
             double xPosition = parent.coordinates.x - 1 + (i % 3);
             double yPosition = parent.coordinates.y - 1 + (i / 3);
-           // System.out.println(" ----- Studying position " + i + ": " + xPosition + ", " + yPosition);
+            System.out.println(" ----- Studying position " + i + ": " + xPosition + ", " + yPosition);
             if (valid(xPosition, yPosition)) {
                 PathfinderOption next = this.generateOption(parent, i, xPosition, yPosition);
+                //this.visitedAtMap.get((int) xPosition).set(yPosition, this.nActionsExecuted);
 //                System.out.println(" ------------------Distance: " + next.distance);
 //                System.out.println(" ------------------Calculated Path: " + next.getPath() + "\n");
                 options.add(next);
@@ -157,7 +182,7 @@ public class Pathfinder {
     }
 
     private boolean insideMap(double x, double y) {
-        return (x >= 0 && x < this.mapWidth && y >= 0 && y < this.mapHeight);
+        return (x > 0 && x < this.mapWidth-1 && y > 0 && y < this.mapHeight-1);
     }
 
     PathfinderOption generateOption(PathfinderOption parent, int index, double xPosition, double yPosition) {
@@ -170,4 +195,39 @@ public class Pathfinder {
     }
 
 
+    public ArrayList<Types.ACTIONS> whereToRun(Types.ACTIONS action, Vector2d myPosition) {
+        PossibleActions possibleAction = PossibleActions.getOppositeAction(action);
+        Vector2d move = PossibleActions.move(possibleAction.getAction());
+        Coordinates newPosition = new Coordinates(myPosition.x + move.x, myPosition.y + move.y);
+        System.out.println("Next position is " + newPosition.x + ", " + newPosition.y);
+        if (!insideMap(newPosition.x, newPosition.y)){
+
+            System.out.println("I should change my axis direction...");
+            double currentHeight = newPosition.y / mapHeight;
+            double currentWidth = newPosition.x / mapWidth;
+           possibleAction = PossibleActions.getOppositeAxisAction(currentHeight, currentWidth, possibleAction);
+        }
+
+        ArrayList<Types.ACTIONS> toRun = new ArrayList<>();
+        toRun.add(possibleAction.getAction()); toRun.add(possibleAction.getAction());
+        System.out.println("My Plan B is " + toRun.toString());
+        return toRun;
+    }
+
+    public boolean shouldIContinue(Types.ACTIONS action, Vector2d myPosition, ArrayList<Vector2d> updatedEnemies) {
+        Vector2d move = PossibleActions.move(action);
+        Coordinates nextPosition = new Coordinates(myPosition.x + move.x, myPosition.y + move.y);
+        Coordinates currentPosition = new Coordinates(myPosition.x, myPosition.y);
+
+        Comparator<Vector2d> comparator = (Vector2d o1, Vector2d o2) -> {
+            Coordinates resource1 = new Coordinates (o1.x, o1.y);
+            Coordinates resource2 = new Coordinates (o2.x, o2.y);
+            return Double.compare( resource1.calculateDistance(new Coordinates(myPosition.x, myPosition.y)), resource2.calculateDistance(new Coordinates(myPosition.x, myPosition.y)));
+        };
+        updatedEnemies.sort(comparator);
+        Vector2d closestEnemy = updatedEnemies.get(0);
+        Coordinates closestEnemyCoord = new Coordinates (closestEnemy.x, closestEnemy.y);
+
+        return nextPosition.calculateDistance(closestEnemyCoord) > currentPosition.calculateDistance(closestEnemyCoord);
+    }
 }

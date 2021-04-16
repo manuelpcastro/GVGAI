@@ -1,6 +1,7 @@
 package tracks.singlePlayer.src_Pancorbo_Castro_Manuel;
 
 import ontology.Types;
+import tools.Vector2d;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,15 @@ public enum PossibleActions {
     PossibleActions(int i) {
         this.orientation = i;
         this.action = getAction(i);
+    }
+
+    public static PossibleActions getOppositeAxisAction(double currentHeight, double currentWidth, PossibleActions possibleAction) {
+        System.out.println("---Curent % height: " + currentHeight + " ----- currentWidth % :" + currentWidth);
+        if (possibleAction == UP || possibleAction == DOWN) {
+            return currentWidth > 0.5 ? LEFT : RIGHT;
+        }
+
+        return currentHeight > 0.5 ? UP : DOWN;
     }
 
     public int getOrientation() {
@@ -67,5 +77,27 @@ public enum PossibleActions {
 
         actions.add(action);
         return actions;
+    }
+
+    public static Vector2d move (Types.ACTIONS action) {
+        PossibleActions possibleAction = getPossibleAction(action);
+        switch(possibleAction) {
+            case UP: return new Vector2d(0,-1);
+            case DOWN: return new Vector2d(0,1);
+            case LEFT: return new Vector2d(-1,0);
+            case RIGHT: return new Vector2d(1,0);
+        }
+        return null;
+    }
+
+    public static PossibleActions getOppositeAction (Types.ACTIONS action) {
+        PossibleActions possibleAction = getPossibleAction(action);
+        switch(possibleAction) {
+            case UP: return DOWN;
+            case DOWN: return UP;
+            case LEFT: return RIGHT;
+            case RIGHT: return LEFT;
+        }
+        return null;
     }
 }

@@ -15,14 +15,14 @@ public class Agent extends AbstractPlayer {
     Vector2d fescala;
     int i;
     ArrayList<Types.ACTIONS> plan;
-    private int current_resources;
+    ArrayList<Types.ACTIONS> planB; //Por si vienen enemigos a por nosotros!
+    int iPlanB;
 
 
     public Agent (StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
-        fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length,
-                stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);
+        fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length, stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);
         i=0;
-        current_resources = 0;
+        iPlanB=0;
         ArrayList<Vector2d> inmovablePositions = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getImmovablePositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
         System.out.println("Blocked: " + inmovablePositions);
         if (stateObs.getResourcesPositions() != null) {
@@ -31,11 +31,32 @@ public class Agent extends AbstractPlayer {
         } else
             this.pathfinder = new Pathfinder(stateObs.getWorldDimension().width, stateObs.getWorldDimension().height, inmovablePositions);
         this.plan = new ArrayList<>();
+        this.planB = new ArrayList<>();
     }
 
     @Override
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
         Types.ACTIONS next = Types.ACTIONS.ACTION_NIL;
+        Vector2d myPosition = applyScale(stateObs.getAvatarPosition());
+        ArrayList<Vector2d> updatedEnemies = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getNPCPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
+
+        if (areEnemiesNearby(myPosition, updatedEnemies)) {
+            System.out.println(this.plan);
+            Types.ACTIONS action;
+            if(plan.size() == 0)
+                action = Types.ACTIONS.ACTION_LEFT;
+            else
+                action = i >= plan.size() ? plan.get(i-1) : plan.get(i);
+            if(!this.pathfinder.shouldIContinue(action, myPosition, updatedEnemies)) {
+                if (planB.size() == 0) {
+                    planB = this.pathfinder.whereToRun(action, myPosition);
+                }
+                next = planB.get(0);
+                planB.remove(0);
+                return next;
+            }
+        }
+
         if (i < plan.size()) {
             next = plan.get(i);
         } else {
@@ -44,15 +65,24 @@ public class Agent extends AbstractPlayer {
             if (stateObs.getResourcesPositions() != null) {
                 if (stateObs.getResourcesPositions()[0].size() > 0) { //Si no hemos conseguido todos, vamos a seguimos buscando
                     ArrayList<Vector2d> updatedResources = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
-                    plan = this.pathfinder.getPlanForResources(updatedResources, stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()));
+                    plan = this.pathfinder.getPlanForResources(updatedResources, stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, myPosition);
                 }
             } else {
-                plan = this.pathfinder.pathFinding_a(stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()), applyScale(new Vector2d(stateObs.getPortalsPositions()[0].get(0).position.x, stateObs.getPortalsPositions()[0].get(0).position.y)));
+                plan = this.pathfinder.pathFinding_a(stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()), new Vector2d(5.0, 5.0));
             }
         }
         i++;
         //System.out.println("MOVING: " + next);
         return next;
+    }
+
+    boolean areEnemiesNearby(Vector2d myPosition, ArrayList<Vector2d> updatedEnemies) {
+         for(Vector2d v : updatedEnemies) {
+            System.out.println("Enemy position: " + v + " --- distance from me: " + new Coordinates(v.x, v.y).calculateDistance(new Coordinates(myPosition.x, myPosition.y)));
+            if (new Coordinates(v.x, v.y).calculateDistance(new Coordinates(myPosition.x, myPosition.y)) < 12.0)
+                return true;
+        }
+       return false;
     }
 
     private Vector2d applyScale(Vector2d vector) {

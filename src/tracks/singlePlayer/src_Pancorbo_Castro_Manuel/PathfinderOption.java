@@ -9,11 +9,19 @@ import java.util.ArrayList;
  * @author Manuel Pancorbo
  */
 class PathfinderOption {
+    Integer visitedAt;
     public Coordinates coordinates;
     public double distance;
     public int orientation;
 
     private ArrayList<Types.ACTIONS> path;
+
+    public PathfinderOption(double x, double y, int orientation, int visited) {
+        this.coordinates = new Coordinates(x,y);
+        this.orientation = orientation;
+        this.path = new ArrayList<>();
+        this.visitedAt = visited;
+    }
 
     public PathfinderOption(double x, double y, int orientation) {
         this.coordinates = new Coordinates(x,y);
