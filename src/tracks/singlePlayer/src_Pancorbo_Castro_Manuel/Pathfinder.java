@@ -1,6 +1,7 @@
 package tracks.singlePlayer.src_Pancorbo_Castro_Manuel;
 
 import ontology.Types;
+import tools.Vector2d;
 
 import java.util.*;
 
@@ -15,7 +16,7 @@ public class Pathfinder {
     private static int POSSIBLE_ORIENTATIONS = 9;
 
     //STEPS TO CALCULATE
-    private static int STEPS = 1;
+    private static int STEPS = 40543234;
 
     //MAP INFO
     private ArrayList<ArrayList<Integer>> map;
@@ -28,10 +29,12 @@ public class Pathfinder {
 
     PathfinderOption initialPosition;
     PathfinderOption targetPosition;
+    ArrayList<Coordinates> blockedPositions;
 
-    public Pathfinder(double width, double height) {
+    public Pathfinder(double width, double height, ArrayList<Vector2d> blockedPositions) {
         this.mapWidth = width;
         this.mapHeight = height;
+        this.blockedPositions = new ArrayList(Arrays.asList(blockedPositions.stream().map(vector -> new Coordinates(vector.x, vector.y)).toArray()));
     }
 
     private int getOrientation(double x, double y) {
@@ -42,14 +45,14 @@ public class Pathfinder {
         return 0;
     }
 
-    public ArrayList<Types.ACTIONS> pathFinding_a(double orientationX, double orientationY, double initialPositionX, double initialPositionY, double targetPositionX, double targetPositionY) {
+    public ArrayList<Types.ACTIONS> pathFinding_a(double orientationX, double orientationY, Vector2d initialPosition, Vector2d targetPosition) {
 
         int originalOrientation = getOrientation(orientationX, orientationY);
         int step = 0;
         System.out.println("---Pathfinder: ON");
 
-        this.initialPosition = new PathfinderOption(initialPositionX, initialPositionY, originalOrientation);
-        this.targetPosition = new PathfinderOption(new Coordinates(targetPositionX, targetPositionY));
+        this.initialPosition = new PathfinderOption(initialPosition.x, initialPosition.y, originalOrientation);
+        this.targetPosition = new PathfinderOption(new Coordinates(targetPosition.x, targetPosition.y));
 
         plan = new ArrayList<>();
         generated = new HashSet<Coordinates>();
@@ -57,20 +60,20 @@ public class Pathfinder {
         Comparator<PathfinderOption> comparator = Comparator.comparingDouble(arg0 -> arg0.distance);
         PriorityQueue<PathfinderOption> queue = new PriorityQueue(comparator);
 
-        PathfinderOption current = initialPosition;
+        PathfinderOption current = this.initialPosition;
         current.setPath(new ArrayList<>(Arrays.asList(PossibleActions.getPossibleAction(originalOrientation).getAction())));
         queue.add(current);
 
         //Mientras haya casillas que estudiar o no lleguemos al objetivo, seguimos evaluando
-        while (step < STEPS && queue.size() != 0 && !current.checkCoordinates(targetPosition)) {
+        while (step < STEPS && queue.size() != 0 && !current.checkCoordinates(this.targetPosition)) {
 
-            //System.out.println("Searching route from " + current.coordinates.x + ", " +  current.coordinates.y + " to " + targetPositionX + ", " + targetPositionY);
+            System.out.println("Searching route from " + current.coordinates.x + ", " +  current.coordinates.y + " to " + targetPosition);
             //Sacamos el primero de la cola
             queue.poll();
 
             //Si no lo hemos evaluado, lo metemos en evaluados
             Coordinates posicion = current.coordinates;
-            if (!generated.contains(posicion)) {
+            if ((generated.stream().filter(i -> posicion.checkCoordinates(i)).toArray().length == 0)) {
                 generated.add(posicion);
             }
             System.out.println("GENERATED: " + generated.toString());
@@ -81,7 +84,7 @@ public class Pathfinder {
 
             //Introducimos aquellas que no hemos visitado
             for (PathfinderOption option : child) {
-                if (!generated.contains(option)) {
+                if (generated.stream().filter(i -> option.coordinates.checkCoordinates(i)).toArray().length == 0) {
                     generated.add(option.coordinates);
                     queue.add(option);
                 }
@@ -94,7 +97,7 @@ public class Pathfinder {
 
         //Hemos terminado, recuperamos el plan si hemos logrado llegar
 
-        System.out.println("Chosen: " + current);
+        System.out.println("Chosen: " + current + " --- is target: " + current.checkCoordinates(this.targetPosition));
         this.plan = current.getPath();
 
 
@@ -107,15 +110,28 @@ public class Pathfinder {
         for (int i = 1; i < Pathfinder.POSSIBLE_ORIENTATIONS; i+=2) {
             double xPosition = parent.coordinates.x - 1 + (i % 3);
             double yPosition = parent.coordinates.y - 1 + (i / 3);
-            System.out.println(" ----- Studying position " + i + ": " + xPosition + ", " + yPosition);
-            if (insideMap(xPosition, yPosition)) {
+           // System.out.println(" ----- Studying position " + i + ": " + xPosition + ", " + yPosition);
+            if (valid(xPosition, yPosition)) {
                 PathfinderOption next = this.generateOption(parent, i, xPosition, yPosition);
-                System.out.println(" ------------------Distance: " + next.distance);
-                System.out.println(" ------------------Calculated Path: " + next.getPath() + "\n");
+//                System.out.println(" ------------------Distance: " + next.distance);
+//                System.out.println(" ------------------Calculated Path: " + next.getPath() + "\n");
                 options.add(next);
             }
         }
         return options;
+    }
+
+    private boolean valid(double x, double y) {
+        if(!insideMap(x, y))
+            return false;
+
+        Coordinates coordinates = new Coordinates(x,y);
+        for (Coordinates blocked : blockedPositions) {
+           if (coordinates.checkCoordinates(blocked))
+                return false;
+        }
+
+        return true;
     }
 
     private boolean insideMap(double x, double y) {
