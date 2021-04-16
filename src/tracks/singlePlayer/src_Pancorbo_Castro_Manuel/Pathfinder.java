@@ -40,6 +40,12 @@ public class Pathfinder {
         this.resources = resources;
     }
 
+    public Pathfinder(double width, double height, ArrayList<Vector2d> blockedPositions) {
+        this.mapWidth = width;
+        this.mapHeight = height;
+        this.blockedPositions = new ArrayList(Arrays.asList(blockedPositions.stream().map(vector -> new Coordinates(vector.x, vector.y)).toArray()));
+    }
+
     public ArrayList<Types.ACTIONS> getPlanForResources(ArrayList<Vector2d> resources, double orientationX, double orientationY, Vector2d initialPosition){
 
         this.resources = resources;

@@ -25,8 +25,11 @@ public class Agent extends AbstractPlayer {
         current_resources = 0;
         ArrayList<Vector2d> inmovablePositions = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getImmovablePositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
         System.out.println("Blocked: " + inmovablePositions);
-        ArrayList<Vector2d> resources = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
-        this.pathfinder = new Pathfinder(stateObs.getWorldDimension().width, stateObs.getWorldDimension().height, inmovablePositions, resources);
+        if (stateObs.getResourcesPositions() != null) {
+            ArrayList<Vector2d> resources = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
+            this.pathfinder = new Pathfinder(stateObs.getWorldDimension().width, stateObs.getWorldDimension().height, inmovablePositions, resources);
+        } else
+            this.pathfinder = new Pathfinder(stateObs.getWorldDimension().width, stateObs.getWorldDimension().height, inmovablePositions);
         this.plan = new ArrayList<>();
     }
 
@@ -39,12 +42,9 @@ public class Agent extends AbstractPlayer {
             i = 0; //Volvemos a empezar a seguir el plan
 
             if (stateObs.getResourcesPositions() != null) {
-                if (stateObs.getResourcesPositions()[0].size() > 0) { //Si no hemos conseguido todos, vamos a buscarlos
-                    System.out.println("Current resources: " + current_resources + " -- " + stateObs.getAvatarResources().get(6));
-                    if (stateObs.getAvatarResources().get(6) != null && current_resources != stateObs.getAvatarResources().get(6)) {
-                        current_resources++; //Si tenemos diferencia entre ambos es porque hemos recogido uno.
-                    }
-                    plan = this.pathfinder.getPlanForResources(new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray())), stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()));
+                if (stateObs.getResourcesPositions()[0].size() > 0) { //Si no hemos conseguido todos, vamos a seguimos buscando
+                    ArrayList<Vector2d> updatedResources = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
+                    plan = this.pathfinder.getPlanForResources(updatedResources, stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()));
                 }
             } else {
                 plan = this.pathfinder.pathFinding_a(stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()), applyScale(new Vector2d(stateObs.getPortalsPositions()[0].get(0).position.x, stateObs.getPortalsPositions()[0].get(0).position.y)));
