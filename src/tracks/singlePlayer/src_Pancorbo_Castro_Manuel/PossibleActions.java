@@ -63,8 +63,6 @@ public enum PossibleActions {
             wantedAction == RIGHT && action == LEFT ||
             wantedAction == DOWN && action == UP) {
             actions.add(LEFT);
-            actions.add(LEFT);
-            return actions;
         }
 
         actions.add(action);

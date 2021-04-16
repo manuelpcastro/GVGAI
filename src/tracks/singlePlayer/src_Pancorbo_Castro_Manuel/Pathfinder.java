@@ -2,6 +2,7 @@ package tracks.singlePlayer.src_Pancorbo_Castro_Manuel;
 
 import ontology.Types;
 import tools.Vector2d;
+import tools.pathfinder.PathFinder;
 
 import java.util.*;
 
@@ -39,8 +40,17 @@ public class Pathfinder {
         this.resources = resources;
     }
 
-    public ArrayList<Types.ACTIONS> getPlanForResources(int index, double orientationX, double orientationY, Vector2d initialPosition){
-        Vector2d targetPosition = resources.get(index);
+    public ArrayList<Types.ACTIONS> getPlanForResources(ArrayList<Vector2d> resources, double orientationX, double orientationY, Vector2d initialPosition){
+
+        this.resources = resources;
+        Comparator<Vector2d> comparador = (Vector2d o1, Vector2d o2) -> {
+            Coordinates resource1 = new Coordinates (o1.x, o1.y);
+            Coordinates resource2 = new Coordinates (o2.x, o2.y);
+            return Double.compare( resource1.calculateDistance(new Coordinates(initialPosition.x, initialPosition.y)), resource2.calculateDistance(new Coordinates(initialPosition.x, initialPosition.y)));
+        };
+
+        this.resources.sort(comparador);
+        Vector2d targetPosition = resources.get(0);
         return pathFinding_a(orientationX, orientationY, initialPosition, targetPosition);
     }
 
@@ -52,14 +62,14 @@ public class Pathfinder {
         return 0;
     }
 
-    public ArrayList<Types.ACTIONS> pathFinding_a(double orientationX, double orientationY, Vector2d initialPosition, Vector2d targetPosition) {
+    public ArrayList<Types.ACTIONS> pathFinding_a(double orientationX, double orientationY, Vector2d vInitialPosition, Vector2d vTargetPosition) {
 
         int originalOrientation = getOrientation(orientationX, orientationY);
         int step = 0;
         System.out.println("---Pathfinder: ON");
 
-        this.initialPosition = new PathfinderOption(initialPosition.x, initialPosition.y, originalOrientation);
-        this.targetPosition = new PathfinderOption(new Coordinates(targetPosition.x, targetPosition.y));
+        this.initialPosition = new PathfinderOption(vInitialPosition.x, vInitialPosition.y, originalOrientation);
+        this.targetPosition = new PathfinderOption(new Coordinates(vTargetPosition.x, vTargetPosition.y));
 
         plan = new ArrayList<>();
         generated = new HashSet<Coordinates>();
@@ -74,7 +84,7 @@ public class Pathfinder {
         //Mientras haya casillas que estudiar o no lleguemos al objetivo, seguimos evaluando
         while (step < STEPS && queue.size() != 0 && !current.checkCoordinates(this.targetPosition)) {
 
-            System.out.println("Searching route from " + current.coordinates.x + ", " +  current.coordinates.y + " to " + targetPosition);
+            System.out.println("Searching route from " + current.coordinates.x + ", " +  current.coordinates.y + " to " + vTargetPosition);
             //Sacamos el primero de la cola
             queue.poll();
 
@@ -106,7 +116,6 @@ public class Pathfinder {
 
         System.out.println("Chosen: " + current + " --- is target: " + current.checkCoordinates(this.targetPosition));
         this.plan = current.getPath();
-
 
         return this.plan;
     }

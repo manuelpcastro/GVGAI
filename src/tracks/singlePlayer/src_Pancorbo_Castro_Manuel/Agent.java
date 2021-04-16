@@ -37,13 +37,15 @@ public class Agent extends AbstractPlayer {
             next = plan.get(i);
         } else {
             i = 0; //Volvemos a empezar a seguir el plan
-            System.out.println("There are " + stateObs.getResourcesPositions()[0].size() + " resources");
-            if (current_resources < stateObs.getResourcesPositions()[0].size()) { //Si no hemos conseguido todos, vamos a buscarlos
-                System.out.println("Current resources: " + current_resources + " -- " + stateObs.getAvatarResources().size());
-                if(current_resources != stateObs.getAvatarResources().size()) {
-                    current_resources++; //Si tenemos diferencia entre ambos es porque hemos recogido uno.
+
+            if (stateObs.getResourcesPositions() != null) {
+                if (stateObs.getResourcesPositions()[0].size() > 0) { //Si no hemos conseguido todos, vamos a buscarlos
+                    System.out.println("Current resources: " + current_resources + " -- " + stateObs.getAvatarResources().get(6));
+                    if (stateObs.getAvatarResources().get(6) != null && current_resources != stateObs.getAvatarResources().get(6)) {
+                        current_resources++; //Si tenemos diferencia entre ambos es porque hemos recogido uno.
+                    }
+                    plan = this.pathfinder.getPlanForResources(new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray())), stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()));
                 }
-                plan = this.pathfinder.getPlanForResources(current_resources, stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()));
             } else {
                 plan = this.pathfinder.pathFinding_a(stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()), applyScale(new Vector2d(stateObs.getPortalsPositions()[0].get(0).position.x, stateObs.getPortalsPositions()[0].get(0).position.y)));
             }
