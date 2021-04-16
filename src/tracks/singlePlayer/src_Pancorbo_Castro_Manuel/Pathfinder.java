@@ -30,11 +30,18 @@ public class Pathfinder {
     PathfinderOption initialPosition;
     PathfinderOption targetPosition;
     ArrayList<Coordinates> blockedPositions;
+    ArrayList<Vector2d> resources;
 
-    public Pathfinder(double width, double height, ArrayList<Vector2d> blockedPositions) {
+    public Pathfinder(double width, double height, ArrayList<Vector2d> blockedPositions, ArrayList<Vector2d> resources) {
         this.mapWidth = width;
         this.mapHeight = height;
         this.blockedPositions = new ArrayList(Arrays.asList(blockedPositions.stream().map(vector -> new Coordinates(vector.x, vector.y)).toArray()));
+        this.resources = resources;
+    }
+
+    public ArrayList<Types.ACTIONS> getPlanForResources(int index, double orientationX, double orientationY, Vector2d initialPosition){
+        Vector2d targetPosition = resources.get(index);
+        return pathFinding_a(orientationX, orientationY, initialPosition, targetPosition);
     }
 
     private int getOrientation(double x, double y) {
@@ -76,11 +83,11 @@ public class Pathfinder {
             if ((generated.stream().filter(i -> posicion.checkCoordinates(i)).toArray().length == 0)) {
                 generated.add(posicion);
             }
-            System.out.println("GENERATED: " + generated.toString());
+            //System.out.println("GENERATED: " + generated.toString());
 
             ArrayList<PathfinderOption> child = generateChilds(current);
 
-            System.out.println("Child : " + child.toString());
+            //System.out.println("Child : " + child.toString());
 
             //Introducimos aquellas que no hemos visitado
             for (PathfinderOption option : child) {

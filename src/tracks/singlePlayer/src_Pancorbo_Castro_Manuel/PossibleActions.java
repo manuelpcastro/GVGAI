@@ -7,8 +7,8 @@ import java.util.Arrays;
 
 public enum PossibleActions {
     UP(1),
-    RIGHT(3),
-    LEFT(5),
+    RIGHT(5),
+    LEFT(3),
     DOWN(7);
 
     private int orientation;
@@ -54,5 +54,20 @@ public enum PossibleActions {
                 return possibleAction;
         }
         return null;
+    }
+
+    public static ArrayList<PossibleActions> howManyTurns (PossibleActions action, PossibleActions wantedAction) {
+        ArrayList<PossibleActions> actions = new ArrayList<>();
+        if (wantedAction == UP && action == DOWN ||
+            wantedAction == LEFT && action == RIGHT ||
+            wantedAction == RIGHT && action == LEFT ||
+            wantedAction == DOWN && action == UP) {
+            actions.add(LEFT);
+            actions.add(LEFT);
+            return actions;
+        }
+
+        actions.add(action);
+        return actions;
     }
 }

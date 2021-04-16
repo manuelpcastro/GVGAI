@@ -53,14 +53,9 @@ class PathfinderOption {
     }
 
     private void checkTurnArounds(Types.ACTIONS lastAction){
-       PossibleActions lastOrientation = PossibleActions.getPossibleAction(lastAction);
-       int expected = lastOrientation.getOrientation();
-
-       while (expected != orientation){
-          expected += expected < orientation ? 2 : -2;
-          this.path.add(PossibleActions.getPossibleAction(expected).getAction());
-       }
-
-       this.path.add(PossibleActions.getPossibleAction(orientation).getAction());
+        PossibleActions lastOrientation = PossibleActions.getPossibleAction(lastAction);
+        PossibleActions expected = lastOrientation;
+        PossibleActions.howManyTurns(expected, PossibleActions.getPossibleAction(orientation)).forEach(i -> {this.path.add(i.getAction());});
+        this.path.add(PossibleActions.getPossibleAction(orientation).getAction());
     }
 }
