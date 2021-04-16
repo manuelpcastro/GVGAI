@@ -195,11 +195,33 @@ public class Pathfinder {
     }
 
 
-    public ArrayList<Types.ACTIONS> whereToRun(Types.ACTIONS action, Vector2d myPosition) {
+    public ArrayList<Types.ACTIONS> whereToRun(Types.ACTIONS action, Vector2d myPosition, ArrayList<Vector2d> updatedEnemies) {
         PossibleActions possibleAction = PossibleActions.getOppositeAction(action);
         Vector2d move = PossibleActions.move(possibleAction.getAction());
         Coordinates newPosition = new Coordinates(myPosition.x + move.x, myPosition.y + move.y);
         System.out.println("Next position is " + newPosition.x + ", " + newPosition.y);
+
+        Comparator<Vector2d> comparator = (Vector2d o1, Vector2d o2) -> {
+            Coordinates resource1 = new Coordinates (o1.x, o1.y);
+            Coordinates resource2 = new Coordinates (o2.x, o2.y);
+            return Double.compare( resource1.calculateDistance(new Coordinates(myPosition.x, myPosition.y)), resource2.calculateDistance(new Coordinates(myPosition.x, myPosition.y)));
+        };
+        updatedEnemies.sort(comparator);
+
+        Vector2d halfway = new Vector2d(myPosition.x,myPosition.y);
+        final int[] boostCloserEnemies = {1};
+        updatedEnemies.forEach(i -> { halfway.x+=(i.x/ boostCloserEnemies[0]); halfway.y+=(i.y/ boostCloserEnemies[0]); boostCloserEnemies[0] *=10; });
+        halfway.x = halfway.x / updatedEnemies.size(); halfway.y = halfway.y / updatedEnemies.size();
+
+        this.targetPosition = new PathfinderOption(new Coordinates(halfway.x, halfway.y));
+        System.out.println("Seems like enemies are around " + targetPosition.coordinates.x + ", " + targetPosition.coordinates.y );
+        PathfinderOption current = new PathfinderOption(myPosition.x, myPosition.y, PossibleActions.getPossibleAction(action).getOrientation());
+        current.setPath(new ArrayList<>(Arrays.asList(action)));
+        ArrayList<PathfinderOption> child = generateChilds(current);
+        child.sort(Comparator.comparingDouble(arg0 -> arg0.distance));
+        System.out.println("I will go for " +  child.get(child.size()-1).coordinates );
+        return child.get(child.size()-1).getPath();
+        /*
         if (!insideMap(newPosition.x, newPosition.y)){
 
             System.out.println("I should change my axis direction...");
@@ -211,7 +233,7 @@ public class Pathfinder {
         ArrayList<Types.ACTIONS> toRun = new ArrayList<>();
         toRun.add(possibleAction.getAction()); toRun.add(possibleAction.getAction());
         System.out.println("My Plan B is " + toRun.toString());
-        return toRun;
+        return toRun;*/
     }
 
     public boolean shouldIContinue(Types.ACTIONS action, Vector2d myPosition, ArrayList<Vector2d> updatedEnemies) {

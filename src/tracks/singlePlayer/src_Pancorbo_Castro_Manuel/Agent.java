@@ -41,18 +41,18 @@ public class Agent extends AbstractPlayer {
         ArrayList<Vector2d> updatedEnemies = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getNPCPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
 
         if (areEnemiesNearby(myPosition, updatedEnemies)) {
-            System.out.println(this.plan);
             Types.ACTIONS action;
             if(plan.size() == 0)
                 action = Types.ACTIONS.ACTION_LEFT;
             else
                 action = i >= plan.size() ? plan.get(i-1) : plan.get(i);
             if(!this.pathfinder.shouldIContinue(action, myPosition, updatedEnemies)) {
-                if (planB.size() == 0) {
-                    planB = this.pathfinder.whereToRun(action, myPosition);
+                if (iPlanB % 2 == 0) {
+                    planB = this.pathfinder.whereToRun(action, myPosition, updatedEnemies);
+                    iPlanB = 0;
                 }
-                next = planB.get(0);
-                planB.remove(0);
+                next = planB.get(iPlanB);
+                iPlanB++;
                 return next;
             }
         }
@@ -79,7 +79,7 @@ public class Agent extends AbstractPlayer {
     boolean areEnemiesNearby(Vector2d myPosition, ArrayList<Vector2d> updatedEnemies) {
          for(Vector2d v : updatedEnemies) {
             System.out.println("Enemy position: " + v + " --- distance from me: " + new Coordinates(v.x, v.y).calculateDistance(new Coordinates(myPosition.x, myPosition.y)));
-            if (new Coordinates(v.x, v.y).calculateDistance(new Coordinates(myPosition.x, myPosition.y)) < 12.0)
+            if (new Coordinates(v.x, v.y).calculateDistance(new Coordinates(myPosition.x, myPosition.y)) < 15.0)
                 return true;
         }
        return false;
