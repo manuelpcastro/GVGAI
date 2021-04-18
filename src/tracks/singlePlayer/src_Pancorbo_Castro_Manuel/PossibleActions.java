@@ -10,7 +10,8 @@ public enum PossibleActions {
     UP(1),
     RIGHT(5),
     LEFT(3),
-    DOWN(7);
+    DOWN(7),
+    STILL(4);
 
     private int orientation;
     private Types.ACTIONS action;
@@ -19,15 +20,6 @@ public enum PossibleActions {
     PossibleActions(int i) {
         this.orientation = i;
         this.action = getAction(i);
-    }
-
-    public static PossibleActions getOppositeAxisAction(double currentHeight, double currentWidth, PossibleActions possibleAction) {
-        System.out.println("---Curent % height: " + currentHeight + " ----- currentWidth % :" + currentWidth);
-        if (possibleAction == UP || possibleAction == DOWN) {
-            return currentWidth > 0.5 ? LEFT : RIGHT;
-        }
-
-        return currentHeight > 0.5 ? UP : DOWN;
     }
 
     public int getOrientation() {
@@ -45,11 +37,11 @@ public enum PossibleActions {
             case 5: return Types.ACTIONS.ACTION_RIGHT;
             case 7: return Types.ACTIONS.ACTION_DOWN;
         }
-        return Types.ACTIONS.ACTION_NIL;
+        return null;
     }
 
     public static PossibleActions getPossibleAction(int i) {
-        ArrayList<PossibleActions> possibleActions = new ArrayList<>(Arrays.asList(UP, RIGHT, LEFT, DOWN));
+        ArrayList<PossibleActions> possibleActions = new ArrayList<>(Arrays.asList(UP, RIGHT, LEFT, DOWN, STILL));
         for (PossibleActions possibleAction : possibleActions) {
             if (possibleAction.getOrientation() == i)
                 return possibleAction;
@@ -58,25 +50,12 @@ public enum PossibleActions {
     }
 
     public static PossibleActions getPossibleAction(Types.ACTIONS action) {
-        ArrayList<PossibleActions> possibleActions = new ArrayList<>(Arrays.asList(UP, RIGHT, LEFT, DOWN));
+        ArrayList<PossibleActions> possibleActions = new ArrayList<>(Arrays.asList(UP, RIGHT, LEFT, DOWN, STILL));
         for (PossibleActions possibleAction : possibleActions) {
             if (possibleAction.getAction() == action)
                 return possibleAction;
         }
         return null;
-    }
-
-    public static ArrayList<PossibleActions> howManyTurns (PossibleActions action, PossibleActions wantedAction) {
-        ArrayList<PossibleActions> actions = new ArrayList<>();
-        if (wantedAction == UP && action == DOWN ||
-            wantedAction == LEFT && action == RIGHT ||
-            wantedAction == RIGHT && action == LEFT ||
-            wantedAction == DOWN && action == UP) {
-            actions.add(LEFT);
-        }
-
-        actions.add(action);
-        return actions;
     }
 
     public static Vector2d move (Types.ACTIONS action) {
@@ -87,17 +66,14 @@ public enum PossibleActions {
             case LEFT: return new Vector2d(-1,0);
             case RIGHT: return new Vector2d(1,0);
         }
-        return null;
+        return new Vector2d(0,0);
     }
 
-    public static PossibleActions getOppositeAction (Types.ACTIONS action) {
-        PossibleActions possibleAction = getPossibleAction(action);
-        switch(possibleAction) {
-            case UP: return DOWN;
-            case DOWN: return UP;
-            case LEFT: return RIGHT;
-            case RIGHT: return LEFT;
-        }
-        return null;
+    public static int getOrientation(double x, double y) {
+        if(x==1) return 5;
+        if(x==-1) return 3;
+        if(y==1) return 7;
+        if(y==-1) return 1;
+        return 0;
     }
 }
