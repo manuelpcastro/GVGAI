@@ -68,11 +68,15 @@ public enum PossibleActions {
 
     public static ArrayList<PossibleActions> howManyTurns (PossibleActions action, PossibleActions wantedAction) {
         ArrayList<PossibleActions> actions = new ArrayList<>();
-        if (wantedAction == UP && action == DOWN ||
+        /*if (wantedAction == UP && action == DOWN ||
             wantedAction == LEFT && action == RIGHT ||
             wantedAction == RIGHT && action == LEFT ||
             wantedAction == DOWN && action == UP) {
-            actions.add(LEFT);
+            actions.add(action);
+        }*/
+
+        if (wantedAction.getAction() != action.getAction()) {
+            actions.add(action);
         }
 
         actions.add(action);

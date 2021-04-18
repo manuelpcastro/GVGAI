@@ -40,7 +40,9 @@ class PathfinderOption {
 
     void setPath(ArrayList<Types.ACTIONS> parentPath) {
         this.path = (ArrayList<Types.ACTIONS>) parentPath.clone();
-        checkTurnArounds(path.get(path.size()-1));
+        if(path.size() > 0) //Si no es el primer nodo a evaluar, checkeamos para poder realizar cambio de direccion correctamente
+            checkTurnArounds(path.get(path.size()-1));
+        this.path.add(PossibleActions.getPossibleAction(orientation).getAction());
     }
 
     ArrayList<Types.ACTIONS> getPath() {
@@ -63,8 +65,16 @@ class PathfinderOption {
     private void checkTurnArounds(Types.ACTIONS lastAction){
         PossibleActions lastOrientation = PossibleActions.getPossibleAction(lastAction);
         PossibleActions expected = lastOrientation;
-        if(expected.getOrientation() != orientation)
-            PossibleActions.howManyTurns(expected, PossibleActions.getPossibleAction(orientation)).forEach(i -> {this.path.add(i.getAction());});
-        this.path.add(PossibleActions.getPossibleAction(orientation).getAction());
+        if(expected.getOrientation() != orientation) {
+            /*PossibleActions.howManyTurns(expected, PossibleActions.getPossibleAction(orientation)).forEach(i ->
+                this.path.add(i.getAction())
+            );*/
+            this.path.add(PossibleActions.getPossibleAction(orientation).getAction());
+        }
+
+    }
+
+    public void addToDistance(double newDistance){
+            this.distance += newDistance;
     }
 }
