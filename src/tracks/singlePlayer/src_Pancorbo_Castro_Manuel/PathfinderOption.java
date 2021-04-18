@@ -1,6 +1,5 @@
 package tracks.singlePlayer.src_Pancorbo_Castro_Manuel;
 import ontology.Types;
-import tracks.singlePlayer.src_Pancorbo_Castro_Manuel.Coordinates;
 
 import java.util.ArrayList;
 
@@ -9,19 +8,11 @@ import java.util.ArrayList;
  * @author Manuel Pancorbo
  */
 class PathfinderOption {
-    Integer visitedAt;
     public Coordinates coordinates;
     public double distance;
     public int orientation;
 
     private ArrayList<Types.ACTIONS> path;
-
-    public PathfinderOption(double x, double y, int orientation, int visited) {
-        this.coordinates = new Coordinates(x,y);
-        this.orientation = orientation;
-        this.path = new ArrayList<>();
-        this.visitedAt = visited;
-    }
 
     public PathfinderOption(double x, double y, int orientation) {
         this.coordinates = new Coordinates(x,y);
@@ -66,9 +57,6 @@ class PathfinderOption {
         PossibleActions lastOrientation = PossibleActions.getPossibleAction(lastAction);
         PossibleActions expected = lastOrientation;
         if(expected.getOrientation() != orientation) {
-            /*PossibleActions.howManyTurns(expected, PossibleActions.getPossibleAction(orientation)).forEach(i ->
-                this.path.add(i.getAction())
-            );*/
             this.path.add(PossibleActions.getPossibleAction(orientation).getAction());
         }
 
