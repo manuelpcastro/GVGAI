@@ -18,6 +18,8 @@ public class Agent extends AbstractPlayer {
     private ArrayList<Types.ACTIONS> plan;
     private ArrayList<Types.ACTIONS> planB; //Por si vienen enemigos a por nosotros!
 
+    boolean enemiesInGame;
+    boolean resourcesInGame;
 
     public Agent (StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
         fescala = new Vector2d(stateObs.getWorldDimension().width / stateObs.getObservationGrid().length, stateObs.getWorldDimension().height / stateObs.getObservationGrid()[0].length);
@@ -30,6 +32,15 @@ public class Agent extends AbstractPlayer {
             this.pathfinder = new Pathfinder(applyScale(new Vector2d(stateObs.getWorldDimension().width,stateObs.getWorldDimension().height)), immovablePositions);
         this.plan = new ArrayList<>();
         this.planB = new ArrayList<>();
+
+        this.enemiesInGame = stateObs.getNPCPositions() != null;
+        if (enemiesInGame && stateObs.getNPCPositions()[0].size() > 1) {
+        // Ajustamos la distancia segun el numero de enemigos
+        // si hay mas enemigos, queremos empezar a planear la estrategia B con mayor antelacion
+           DISTANCE_TO_ENEMIES = DISTANCE_TO_ENEMIES *(stateObs.getNPCPositions()[0].size() - 1)*1.5;
+        }
+
+        this.resourcesInGame = stateObs.getResourcesPositions() != null;
     }
 
     @Override
@@ -37,8 +48,7 @@ public class Agent extends AbstractPlayer {
         Types.ACTIONS next = Types.ACTIONS.ACTION_NIL;
         Vector2d myPosition = applyScale(stateObs.getAvatarPosition());
 
-        boolean thereAreEnemiesInGame = stateObs.getNPCPositions() != null;
-        if (thereAreEnemiesInGame) {
+        if (enemiesInGame) {
             // Comprobamos si debemos seguir nuestro plan para llegar al objetivo o debemos tener cuidado con enemigos
             next = checkEnemies(stateObs, myPosition);
             /* Si la accion devuelta es null
@@ -61,12 +71,13 @@ public class Agent extends AbstractPlayer {
         i = 0;
 
         // Si hay gemas por coger, primero debemos recogerlas
-        boolean thereAreResourcesInGame = stateObs.getResourcesPositions() != null;
-        if (thereAreResourcesInGame) {
-            if (stateObs.getResourcesPositions()[0].size() > 0) { //Si no hemos conseguido todas, vamos a seguimos buscando
-                ArrayList<Vector2d> updatedResources = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
-                plan = this.pathfinder.getPlanForResources(updatedResources, stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, myPosition);
-            }
+        // Esta comprobacion se debe actualizar, ya que cuando terminemos de recoger
+        // nos devolvera null porque no queda ninguna en la partida
+        this.resourcesInGame = stateObs.getResourcesPositions() != null;
+        if (resourcesInGame) {
+            //Si no hemos conseguido todas, vamos a seguimos buscando
+            ArrayList<Vector2d> updatedResources = new ArrayList(Arrays.asList(Arrays.stream(stateObs.getResourcesPositions()).flatMap(i -> i.stream().map(j -> applyScale(j.position))).toArray()));
+            plan = this.pathfinder.getPlanForResources(updatedResources, stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, myPosition);
         } else {
             // Hacemos plan para llegar a la puerta de salida
             plan = this.pathfinder.pathFinding_a(stateObs.getAvatarOrientation().x, stateObs.getAvatarOrientation().y, applyScale(stateObs.getAvatarPosition()), applyScale(stateObs.getPortalsPositions()[0].get(0).position) );

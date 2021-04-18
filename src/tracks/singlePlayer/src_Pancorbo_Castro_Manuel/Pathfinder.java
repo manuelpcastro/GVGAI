@@ -14,9 +14,6 @@ public class Pathfinder {
     //POSSIBLE MOVES
     private static int POSSIBLE_ORIENTATIONS = 9;
 
-    //STEPS TO CALCULATE
-    private static int STEPS = Integer.MAX_VALUE;
-
     //MAP INFO
     private double mapHeight;
     private double mapWidth;
@@ -62,7 +59,6 @@ public class Pathfinder {
 
     public ArrayList<Types.ACTIONS> pathFinding_a(double orientationX, double orientationY, Vector2d vInitialPosition, Vector2d vTargetPosition) {
         int originalOrientation = PossibleActions.getOrientation(orientationX, orientationY);
-        int step = 0;
 
         this.initialPosition = new PathfinderOption(vInitialPosition.x, vInitialPosition.y, originalOrientation);
         this.targetPosition = new PathfinderOption(new Coordinates(vTargetPosition.x, vTargetPosition.y));
@@ -70,7 +66,11 @@ public class Pathfinder {
         plan = new ArrayList<>();
         generated = new HashSet<Coordinates>();
 
-        Comparator<PathfinderOption> comparator = Comparator.comparingDouble(arg0 -> arg0.distance);
+        /* Ordenamos los nodos por distancia y coste por la cantidad de acciones a realizar (tenemos que tener en cuenta que
+         * los cambios de direccion hacen que una ruta pueda ser muy costosa en numero de ticks aunque tenga menos distancia)
+         * Por esto le damos mas peso al numero de pasos >> giros (ticks)
+         */
+        Comparator<PathfinderOption> comparator = Comparator.comparingDouble(arg0 -> arg0.distance + arg0.getPath().size()*4.0);
         PriorityQueue<PathfinderOption> queue = new PriorityQueue(comparator);
 
         PathfinderOption current = this.initialPosition;
@@ -78,7 +78,7 @@ public class Pathfinder {
         queue.add(current);
 
         //Mientras haya casillas que estudiar o no lleguemos al objetivo, seguimos evaluando
-        while (step < STEPS && queue.size() != 0 && !current.checkCoordinates(this.targetPosition)) {
+        while (queue.size() != 0 && !current.checkCoordinates(this.targetPosition)) {
             //Sacamos el primero de la cola (la mejor opcion)
             queue.poll();
 
@@ -99,8 +99,6 @@ public class Pathfinder {
                 }
             }
 
-            //cogemos el siguiente
-            step++;
             current = queue.peek();
         }
 
@@ -176,8 +174,12 @@ public class Pathfinder {
         PathfinderOption option = new PathfinderOption(xPosition, yPosition, index);
         option.calculateDistance(this.targetPosition);
         /* Al fin y al cabo nuestra medida de la distancia es el coste con el que evaluamos si una casilla es mejor que otra.
-         * Podemos aprovechar esto para "sobrecargar" el coste cuando haya enemigos cerca, para quitarle preferencia a una casilla
+         * Podemos aprovechar esto para "sobrecargar" el coste cuando haya enemigos cerca para quitarle preferencia a una casilla
          * que se encuentre mas proxima a los enemigos
+         *
+         * Para conseguir esto necesitamos que cuanto mas cerca este de la casilla que estamos considerando, menos valorada sea.
+         * Por lo tanto, calculamos la distancia que se encuentra cada enemigo de esta casilla, como necesitamos que a menor distancia
+         * sea mayor coste, lo invertimos con un valor mayor, en este caso haciendo uso del valor maximo del tipo primitivo Double.
          *
          * Sumamos 1 a la distancia por el caso en el que un enemigo este en la casilla objetivo, para evitar una posible excepcion
          * (aunque no he llegado a tener ninguna, puede haber conflictos segun la version del jdk)

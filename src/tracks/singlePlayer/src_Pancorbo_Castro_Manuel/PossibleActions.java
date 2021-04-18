@@ -16,7 +16,6 @@ public enum PossibleActions {
     private int orientation;
     private Types.ACTIONS action;
 
-
     PossibleActions(int i) {
         this.orientation = i;
         this.action = getAction(i);
@@ -58,6 +57,7 @@ public enum PossibleActions {
         return null;
     }
 
+    // Nos devuelve las coordenadas correspondientes segun la accion
     public static Vector2d move (Types.ACTIONS action) {
         PossibleActions possibleAction = getPossibleAction(action);
         switch(possibleAction) {
